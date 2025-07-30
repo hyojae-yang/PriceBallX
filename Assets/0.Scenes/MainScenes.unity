@@ -13440,7 +13440,7 @@ AudioSource:
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 0
-  m_Volume: 1
+  m_Volume: 0.3
   m_Pitch: 1
   Loop: 0
   Mute: 0
@@ -13533,11 +13533,11 @@ Transform:
   m_GameObject: {fileID: 1948852289}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 306.22913, y: 183.95016, z: -3.0308228}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 2146623681}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1968970100
 GameObject:
@@ -13569,7 +13569,7 @@ AudioSource:
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 1
-  m_Volume: 0.3
+  m_Volume: 0.5
   m_Pitch: 1
   Loop: 1
   Mute: 0
@@ -13662,11 +13662,11 @@ Transform:
   m_GameObject: {fileID: 1968970100}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 306.22913, y: 183.95016, z: -3.0308228}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 2146623681}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1980259158
 GameObject:
@@ -15381,11 +15381,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   bgmSource: {fileID: 1968970101}
   sfxSource: {fileID: 1948852290}
-  titleBGM: {fileID: 0}
-  gameBGM: {fileID: 0}
-  sfx_GameEvent: {fileID: 0}
-  sfx_StorageOpen: {fileID: 0}
-  sfx_ButtonClick: {fileID: 0}
+  titleBGM: {fileID: 8300000, guid: bea93a38b71b64b598109b3a3b1a0048, type: 3}
+  gameBGM: {fileID: 8300000, guid: 5b1ed8fbe89154eaf96723b6e5f0aad3, type: 3}
+  sfx_GameEvent: {fileID: 8300000, guid: a0010a1a0c474473b81729eb770c485f, type: 3}
+  sfx_StorageOpen: {fileID: 8300000, guid: 29bde6326b4c34ad8a12da475f79b50a, type: 3}
+  sfx_ButtonClick: {fileID: 8300000, guid: 2c5292ba5cf254919a6b9e2b18e04f49, type: 3}
 --- !u!4 &2146623681
 Transform:
   m_ObjectHideFlags: 0
@@ -15398,9 +15398,7 @@ Transform:
   m_LocalPosition: {x: 306.22913, y: 183.95016, z: -3.0308228}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1968970102}
-  - {fileID: 1948852291}
+  m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &980139576014008867 stripped
@@ -15872,4 +15870,6 @@ SceneRoots:
   - {fileID: 451209677}
   - {fileID: 1681310505}
   - {fileID: 723839300}
+  - {fileID: 1968970102}
+  - {fileID: 1948852291}
   - {fileID: 2146623681}

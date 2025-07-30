@@ -17,7 +17,7 @@ public class AudioManager : MonoBehaviour
 
     // 효과음 클립들
     public AudioClip sfx_GameEvent;      // 예: 게임 내 수확, 수집 등
-    public AudioClip sfx_StorageOpen;    // 예: 창고 열기 등
+    public AudioClip sfx_StorageOpen;    // 예: 에너미 이벤트 등
     public AudioClip sfx_ButtonClick;    // 버튼 클릭 효과음
 
     void Start()
@@ -69,7 +69,7 @@ public class AudioManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 효과음 재생 (창고 열기 등 UI 이벤트)
+    /// 효과음 재생 (에너미 이벤트)
     /// </summary>
     public void PlaySetSFX()
     {
