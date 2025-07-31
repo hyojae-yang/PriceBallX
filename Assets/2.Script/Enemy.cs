@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using System.Linq;
 using System.Collections;
 
 /// <summary>
@@ -13,13 +12,13 @@ public class Enemy : MonoBehaviour
     [Header("플레이어보다 얼마나 커야 반응하는가")]
     private float sizeThresholdMultiplier = 1.5f;
 
-    
     [Header("분리 쿨다운 설정")]
-    float dropCooldown = 10f;
+    private float dropCooldown = 10f;
 
     [Header("충돌 튕겨내기 힘 세기")]
-    float bounceForce = 0.008f;
+    private float bounceForce = 0.008f;
 
+    [Header("분리된 오브젝트에 들어갈 트레일 머티리얼")]
     public Material trailMaterial;
 
     private PickupObject pickup;
@@ -39,14 +38,8 @@ public class Enemy : MonoBehaviour
             return;
     }
 
-    /// <summary>
-    /// 일직선 왕복 이동
-    /// </summary>
-    
-
     private void OnCollisionEnter(Collision collision)
     {
-       
         if (hasRecentlyTriggered || isAttached)
             return;
 
@@ -56,13 +49,13 @@ public class Enemy : MonoBehaviour
 
         float playerRadius = player.GetRadius();
         float myRadius = pickup.GetSizeValue() / 2f;
-     
+
         if (myRadius > playerRadius * sizeThresholdMultiplier)
         {
-            // DropFromPlayer가 List<Transform> 반환하도록 수정 후,
+            // 최근 붙은 오브젝트 5개만 분리
             List<Transform> droppedObjects = DropFromPlayer(player);
 
-            // 분리된 오브젝트만 튕겨내기
+            // 분리된 오브젝트 및 플레이어 튕기기
             BounceObjects(player, droppedObjects);
 
             hasRecentlyTriggered = true;
@@ -70,102 +63,74 @@ public class Enemy : MonoBehaviour
         }
     }
 
-
     /// <summary>
-    /// 플레이어에 붙은 오브젝트들 중 일부를 랜덤하게 떼어냄
+    /// 플레이어의 최근 붙은 오브젝트 5개 분리
     /// </summary>
     private List<Transform> DropFromPlayer(PlayerController player)
     {
-        GameObject playerObj = player.gameObject;
-        List<PickupObject> pickups = new List<PickupObject>();
-
-        // 플레이어 자식 중 PickupObject 컴포넌트가 있는 것들을 수집
-        foreach (Transform child in playerObj.transform)
-        {
-            var pickup = child.GetComponent<PickupObject>();
-            if (pickup != null)
-                pickups.Add(pickup);
-        }
-
-        if (pickups.Count == 0)
-        {
-            return new List<Transform>(); // 분리할 게 없으면 빈 리스트 반환
-        }
-
         AudioManager.Instance?.PlayDistroySFX();
 
-        int dropCount = Mathf.Min(5, pickups.Count);
-        var randomPickups = pickups.OrderBy(x => Random.value).Take(dropCount).ToList();
+        int dropCount = 5;
+        List<Transform> droppedObjects = player.DetachRecentObjects(dropCount);
 
         float totalShrinkAmount = 0f;
-        List<Transform> droppedObjects = new List<Transform>(); // 분리된 오브젝트 리스트
 
-        foreach (var pickup in randomPickups)
+        foreach (var t in droppedObjects)
         {
-            Transform obj = pickup.transform;
-            obj.parent = null;
+            var pickup = t.GetComponent<PickupObject>();
+            if (pickup != null)
+                totalShrinkAmount += pickup.GetGrowthAmount();
 
-            Rigidbody rb = obj.GetComponent<Rigidbody>();
+            Rigidbody rb = t.GetComponent<Rigidbody>();
             bool newlyAdded = false;
 
-            // Rigidbody 없으면 새로 추가
             if (rb == null)
             {
-                rb = obj.gameObject.AddComponent<Rigidbody>();
+                rb = t.gameObject.AddComponent<Rigidbody>();
                 newlyAdded = true;
             }
 
-            // 초기화
             rb.isKinematic = false;
             rb.useGravity = true;
-            rb.linearVelocity = Vector3.zero;
-            StartCoroutine(AddTrailAndRemove(obj.gameObject, 0.6f));
-            // 일정 시간 후 Rigidbody 제거 (Collider는 유지)
+
             if (newlyAdded)
             {
-                MonoBehaviour runner = player.GetComponent<MonoBehaviour>(); // 코루틴 실행용
+                MonoBehaviour runner = player.GetComponent<MonoBehaviour>();
                 if (runner != null)
-                    runner.StartCoroutine(RemoveRigidbodyAfterDelay(obj.gameObject, rb, 7f));
+                    runner.StartCoroutine(RemoveRigidbodyAfterDelay(t.gameObject, rb, 7f));
             }
 
-            totalShrinkAmount += pickup.GetGrowthAmount();
-            droppedObjects.Add(obj);
+            StartCoroutine(AddTrailAndRemove(t.gameObject, 0.6f));
         }
 
         if (totalShrinkAmount > 0f)
-        {
             player.ShrinkBy(totalShrinkAmount);
-        }
 
         return droppedObjects;
     }
 
-    // 일정 시간 후 Rigidbody 제거
     private IEnumerator RemoveRigidbodyAfterDelay(GameObject obj, Rigidbody rb, float delay)
     {
         yield return new WaitForSeconds(delay);
 
         if (obj != null && rb != null)
         {
-            Object.Destroy(rb); // Rigidbody만 제거
+            Object.Destroy(rb);
         }
     }
 
-
-
     /// <summary>
-    /// 플레이어와 부딪친 후 튕겨져 나가게 하는 함수
-    /// 리지드바디가 없으면 위치만 살짝 밀어내는 방식 적용
+    /// 플레이어와 분리된 오브젝트들 튕겨내기 처리
     /// </summary>
     private void BounceObjects(PlayerController player, List<Transform> droppedObjects)
     {
         Rigidbody playerRb = player.GetComponent<Rigidbody>();
         float scaledBounceForce = bounceForce * player.GetRadius();
-        // 플레이볼 튕겨질 방향에 Y축 위쪽 성분 추가 (0.5f 정도 올려주기)
+
         Vector3 bounceDir = (player.transform.position - transform.position).normalized + Vector3.up * 0.5f;
         bounceDir.Normalize();
 
-        // 플레이어 볼 튕겨내기
+        // 플레이어 본체 튕기기
         if (playerRb != null)
         {
             playerRb.AddForce(bounceDir * scaledBounceForce, ForceMode.Impulse);
@@ -175,18 +140,16 @@ public class Enemy : MonoBehaviour
             player.transform.position += bounceDir * 0.5f;
         }
 
+        // 각 오브젝트 튕기기
         foreach (var objTransform in droppedObjects)
         {
             Rigidbody rb = objTransform.GetComponent<Rigidbody>();
             if (rb != null)
             {
-                // 플레이어 중심을 기준으로 방향 계산
                 Vector3 baseDir = (objTransform.position - player.transform.position).normalized;
-
-                // 랜덤 확산 추가 (더 자연스럽게)
                 Vector3 randomSpread = new Vector3(
                     Random.Range(-0.3f, 0.3f),
-                    Random.Range(0.6f, 1.0f),  // 위로 튕기는 성분 강조
+                    Random.Range(0.6f, 1.0f),
                     Random.Range(-0.3f, 0.3f)
                 );
 
@@ -196,30 +159,26 @@ public class Enemy : MonoBehaviour
                 rb.useGravity = true;
                 rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
                 rb.detectCollisions = true;
-               
-                // 살짝 띄워서 박힘 방지
+
                 objTransform.position += Vector3.up * 0.2f;
 
-                // 스케일링된 힘 적용
-                rb.AddForce(forceDir * scaledBounceForce*4, ForceMode.VelocityChange);
-                
+                rb.AddForce(forceDir * scaledBounceForce * 4f, ForceMode.VelocityChange);
             }
             else
             {
-                // 리지드바디 없는 경우도 비슷한 방향으로 약하게 밀기
                 Vector3 fallbackDir = (objTransform.position - player.transform.position).normalized + Vector3.up * 0.5f;
                 objTransform.position += fallbackDir.normalized * 0.3f;
             }
         }
-      
     }
+
     private void ResetTrigger()
     {
         hasRecentlyTriggered = false;
     }
 
     /// <summary>
-    /// 플레이어에 붙을 때 호출되는 메서드 (기능 정지용)
+    /// 플레이어에 붙었을 때 에너미 비활성화
     /// </summary>
     public void OnAttachedToPlayer()
     {
@@ -229,18 +188,28 @@ public class Enemy : MonoBehaviour
 
     private IEnumerator AddTrailAndRemove(GameObject obj, float duration)
     {
-        // Trail Renderer 컴포넌트 추가
+        // 이미 TrailRenderer가 있으면 중복 추가 방지
+        TrailRenderer existingTrail = obj.GetComponent<TrailRenderer>();
+        if (existingTrail != null)
+        {
+            yield break; // 이미 있으면 코루틴 종료
+        }
+
+        if (trailMaterial == null)
+        {
+            Debug.LogWarning($"Enemy.cs 경고: trailMaterial이 할당되지 않았습니다. 게임오브젝트 '{gameObject.name}' 확인 필요.");
+            yield break;
+        }
+
         TrailRenderer trail = obj.AddComponent<TrailRenderer>();
 
-        // 트레일 기본 설정
-        trail.time = 0.5f; // 잔상 유지 시간
+        trail.time = 0.5f;
         trail.startWidth = 0.01f;
         trail.endWidth = 0f;
         trail.material = trailMaterial;
         trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         trail.receiveShadows = false;
 
-        // 일정 시간 후 트레일 제거
         yield return new WaitForSeconds(duration);
 
         if (trail != null)
@@ -248,5 +217,4 @@ public class Enemy : MonoBehaviour
             Destroy(trail);
         }
     }
-
 }
